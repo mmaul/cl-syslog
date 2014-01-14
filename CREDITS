@@ -1,3 +1,5 @@
 Erik Enge ripped much of this code out of ODCL's log.lisp (made into
 ASDF package and now only relies on UFFI, conditions and options to
 openlog).
+
+Mike Maul implemented UDP syslog client 

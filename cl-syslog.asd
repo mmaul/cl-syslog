@@ -18,7 +18,7 @@ package"))
     :version "0.1.0"
     :licence "MIT"
     :description "Common Lisp syslog interface"
-    :depends-on (:cffi)
+    :depends-on (:cffi :usocket :simple-date-time)
     :properties ((#:author-email . "cl-syslog-devel@common-lisp.net")
                  (#:date . "$Date: 2006/11/28 19:46:09 $")
                  ((#:albert #:output-dir) . "doc/api-doc/")
@@ -30,5 +30,9 @@ package"))
                  (:file "variable"
                         :depends-on ("package"))
                  (:file "cl-syslog"
-                        :depends-on ("variable"))))
-                 
+                        :depends-on ("variable"))
+                 (:file "udp-syslog"
+                        :depends-on ("cl-syslog"))
+                 ))
+
+

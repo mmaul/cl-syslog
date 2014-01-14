@@ -1,0 +1,168 @@
+;;;; NAME: udp-syslog.lisp
+;;;; AUTHOR: Mike Maul
+;;;; UDP Syslog - Extensions to cl-syslog to allow for streaming to
+;;;; syslog destination.
+
+;;; TODO: Implement structured data
+
+;;;; See the LICENSE file for licensing information.
+
+(in-package :cl-syslog-udp)
+;;
+
+(defparameter *udp-syslog-socket* nil)
+
+(define-condition unset-logger (error)
+  ((msg :initarg :msg :reader msg)))
+
+(defun udp-logger ( host port &key transient)
+  #|| Constructs a UDP socket to host:port
+  :transient returns udp socket with out setting global socket||#
+  (let ((ulogger  (usocket:socket-connect host port :protocol :datagram)))
+    (when (not  transient)
+      ( setf *udp-syslog-socket* ulogger))
+    ulogger))
+
+(defun ulog-raw (message &key logger)
+  #||
+  Streams contents of message string to UDP destination.
+  If a strict syslog formatted message is desired see (ulog ...),
+  otherwise this function would be okay to simple udp listener.
+  
+  ##Parameters##
+  :logger
+  The destination is specified by either setting the global udp logger by
+  calling the udp-logger function or by specifying a logger with the  
+  :logger parameter. 
+  ||#
+  (usocket:socket-send (or logger *udp-syslog-socket*
+                           (error (make-condition 'unset-logger)))
+                       (if (typep message 'string)
+                           (babel:string-to-octets message)
+                         message)
+                       (length message)))
+
+#||
+   SYSLOG Message Format from RFC 5425
+      SYSLOG-MSG      = HEADER SP STRUCTURED-DATA [SP MSG]
+      HEADER          = PRI VERSION SP TIMESTAMP SP HOSTNAME
+                        SP APP-NAME SP PROCID SP MSGID
+      PRI             = "<" PRIVAL ">"
+      PRIVAL          = 1*3DIGIT ; range 0 .. 191
+      VERSION         = NONZERO-DIGIT 0*2DIGIT
+      HOSTNAME        = NILVALUE / 1*255PRINTUSASCII
+      APP-NAME        = NILVALUE / 1*48PRINTUSASCII
+      PROCID          = NILVALUE / 1*128PRINTUSASCII
+      MSGID           = NILVALUE / 1*32PRINTUSASCII
+      TIMESTAMP       = NILVALUE / FULL-DATE "T" FULL-TIME
+      FULL-DATE       = DATE-FULLYEAR "-" DATE-MONTH "-" DATE-MDAY
+      DATE-FULLYEAR   = 4DIGIT
+      DATE-MONTH      = 2DIGIT  ; 01-12
+      DATE-MDAY       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on
+                                ; month/year
+      FULL-TIME       = PARTIAL-TIME TIME-OFFSET
+      PARTIAL-TIME    = TIME-HOUR ":" TIME-MINUTE ":" TIME-SECOND
+                        [TIME-SECFRAC]
+      TIME-HOUR       = 2DIGIT  ; 00-23
+      TIME-MINUTE     = 2DIGIT  ; 00-59
+      TIME-SECOND     = 2DIGIT  ; 00-59
+      TIME-SECFRAC    = "." 1*6DIGIT
+      TIME-OFFSET     = "Z" / TIME-NUMOFFSET
+      TIME-NUMOFFSET  = ("+" / "-") TIME-HOUR ":" TIME-MINUTE
+      STRUCTURED-DATA = NILVALUE / 1*SD-ELEMENT
+      SD-ELEMENT      = "[" SD-ID *(SP SD-PARAM) "]"
+      SD-PARAM        = PARAM-NAME "=" %d34 PARAM-VALUE %d34
+      SD-ID           = SD-NAME
+      PARAM-NAME      = SD-NAME
+      PARAM-VALUE     = UTF-8-STRING ; characters '"', '\' and
+                                     ; ']' MUST be escaped.
+      SD-NAME         = 1*32PRINTUSASCII
+                        ; except '=', SP, ']', %d34 (")
+      MSG             = MSG-ANY / MSG-UTF8
+      MSG-ANY         = *OCTET ; not starting with BOM
+      MSG-UTF8        = BOM UTF-8-STRING
+      BOM             = %xEF.BB.BF
+      UTF-8-STRING    = *OCTET ; UTF-8 string as specified
+                        ; in RFC 3629
+      OCTET           = %d00-255
+      SP              = %d32
+      PRINTUSASCII    = %d33-126
+      NONZERO-DIGIT   = %d49-57
+      DIGIT           = %d48 / NONZERO-DIGIT
+      NILVALUE        = "-"
+||#
+
+
+(defun epoch-to-syslog-time (&optional epoch)
+  #||
+  Syslog timestamp formatter defaults to current time.
+  Optional arg epoch as epoch seconds
+  Example format:2013-12-14T21:09:57.0Z-5
+  ||#
+  (let ((v (if epoch (simple-date-time:from-posix-time epoch)
+             (simple-date-time:now))))
+    (format nil "~aT~a:~a.~d~a:00"
+            (simple-date-time:yyyy-mm-dd v)
+            (simple-date-time:|hh:mm| v)
+            (simple-date-time:SECOND-OF v)
+            (simple-date-time:MILLISECOND-OF v)
+            simple-date-time:*default-timezone*)))
+
+
+(defun ulog ( msg &key (pri :info) (fac :local7)
+                  (hostname (machine-instance))
+                  (app-name (package-name *package*))
+                  (procid "") (msgid "")
+                  (timestamp (epoch-to-syslog-time))
+                  logger)
+  #||
+  Streams a syslog formatted message (rfc5424) to a UDP destination.
+  Below is a sample of the equivalant string representation of a syslog 
+  message streamed with this function:
+    <165>1 2003-08-24T05:14:15.000003-07:00 192.0.2.1 myproc 8710 - - %% It's time to make the do-nuts.
+
+  ##Parameters##
+  The paremeters map into the syslog message as shown below
+  :PRI VERSION SP :TIMESTAMP SP :HOSTNAME
+       SP :APP-NAME SP :PROCID SP :MSGID SP STRUCTURED-DATA [SP :MSG]
+ 
+  :logger
+  The destination is specified by either setting the global udp logger by
+  calling the udp-logger function or by specifying a logger with the  
+  :logger parameter. 
+
+  :pri
+  Must be one of the following priorities (default :info)
+    :emerg   :alert   :crit :err
+    :warning :notice  :info :debug
+
+  :fac
+  Facility parameter  must be one of (default :local7)
+    :kern   :user    :mail     :daemon
+    :auth   :syslog  :lpr      :news
+    :uucp   :cron    :authpriv :ftp
+    :local0 :local1  :local2   :local3
+    :local4 :local5  :local6   :local7
+
+  :app-name
+  Application name defaults to *package*
+
+  :hostname
+  Hostname defaults to (machine-instance)
+  ||#
+  (ulog-raw
+      (coerce (concatenate 'vector (babel:string-to-octets
+                     (format nil "<~d>1 ~a ~a ~a ~a ~a ~a "
+                             (+  (* 8 (syslog:get-facility (or fac :local7)))
+                                 (syslog:get-priority (or pri :info)))
+                             timestamp 
+                             hostname 
+                             app-name
+                             (or procid "")
+                             (or msgid "")
+                             "-" ; Unimplemented structured data section
+                             ))
+                       #(#xef #xbb #xbf)
+                       (babel:string-to-octets msg))
+              '(vector (unsigned-byte 8)))
+      :logger logger))
