@@ -16,17 +16,18 @@ Priorities and facilities documented in variable.lisp.
 Examples
 ========
 Local Syslog Example:
-  * (require :cl-syslog)
+    * (require :cl-syslog)
+      
+    * (syslog:log "myprog" :local7 :info "this is the message")
+   "this is the message"
 
-  * (syslog:log "myprog" :local7 :info "this is the message")
-  "this is the message"
+    * (syslog:log "myprog" :local7 :info "this is the message" 
+        syslog:+log-pid+)
+   "this is the message"
 
-  * (syslog:log "myprog" :local7 :info "this is the message" syslog:+log-pid+)
-  "this is the message"
-
-  * (syslog:log "myprog" :local7 :info "this is the message" (+ syslog:+log-pid+ 
-                                                                syslog:+log-cons+))
-  "this is the message"
+    * (syslog:log "myprog" :local7 :info "this is the message" 
+        (+ syslog:+log-pid+ syslog:+log-cons+))
+    "this is the message"
  
 Then look in your /var/log/messages or other location if you have
 tweaked your /etc/syslog.conf.
