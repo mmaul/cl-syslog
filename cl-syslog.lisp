@@ -59,7 +59,7 @@ such priority, signal `invalid-priority' error."
 ;; Log function
 ;;
 
-(defun log (name facility priority text &optional (option 0))
+(defun log (name facility priority text &optional (option 0) &rest r)
   "Print message to syslog.
 'option' can be any of the +log...+ constants"
   (cffi:with-foreign-string (cname name)

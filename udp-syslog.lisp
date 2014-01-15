@@ -7,7 +7,7 @@
 
 ;;;; See the LICENSE file for licensing information.
 
-(in-package :cl-syslog-udp)
+(in-package :cl-syslog.udp)
 ;;
 
 (defparameter *udp-syslog-socket* nil)
@@ -16,15 +16,17 @@
   ((msg :initarg :msg :reader msg)))
 
 (defun udp-logger ( host port &key transient)
-  #|| Constructs a UDP socket to host:port
-  :transient returns udp socket with out setting global socket||#
+  "
+  Constructs a UDP socket to host:port
+  :transient returns udp socket with out setting global socket
+  "
   (let ((ulogger  (usocket:socket-connect host port :protocol :datagram)))
     (when (not  transient)
       ( setf *udp-syslog-socket* ulogger))
     ulogger))
 
 (defun ulog-raw (message &key logger)
-  #||
+  "
   Streams contents of message string to UDP destination.
   If a strict syslog formatted message is desired see (ulog ...),
   otherwise this function would be okay to simple udp listener.
@@ -34,7 +36,7 @@
   The destination is specified by either setting the global udp logger by
   calling the udp-logger function or by specifying a logger with the  
   :logger parameter. 
-  ||#
+  "
   (usocket:socket-send (or logger *udp-syslog-socket*
                            (error (make-condition 'unset-logger)))
                        (if (typep message 'string)
@@ -92,13 +94,28 @@
       NILVALUE        = "-"
 ||#
 
+#+clisp
+(defmacro getpid ()  `(funcall ,(symbol-function
+                              ;; Decide at load time which function to use.
+                              (or (and (member :unix *features* :test #'eq)
+                                       (or (find-symbol "PROCESS-ID" "SYS")
+                                           (find-symbol "PROGRAM-ID" "SYS")))
+                                  'getpid-from-environment))))
+#+ccl
+(defun getpid () (ccl::getpid))
+
+#+(or cmu scl)
+(defun getpid () (unix:unix-getpid))
+
+#+sbcl
+(defun getpid () (sb-unix:unix-getpid))
 
 (defun epoch-to-syslog-time (&optional epoch)
-  #||
+  "
   Syslog timestamp formatter defaults to current time.
   Optional arg epoch as epoch seconds
   Example format:2013-12-14T21:09:57.0Z-5
-  ||#
+  "
   (let ((v (if epoch (simple-date-time:from-posix-time epoch)
              (simple-date-time:now))))
     (format nil "~aT~a:~a.~d~a:00"
@@ -108,14 +125,46 @@
             (simple-date-time:MILLISECOND-OF v)
             simple-date-time:*default-timezone*)))
 
+(defmacro log (name facility priority text &optional (option 0)
+                    &key procid timestamp logger)
+  "
+  Macro wrapping ulog providing backwards signature compatibility with
+  cl-syslog:log function. The purpose of this is to allow the switching
+  of log destinations by switching bewteen the cl-syslog and cl-syslog.udp
+  namespaces.
 
-(defun ulog ( msg &key (pri :info) (fac :local7)
-                  (hostname (machine-instance))
-                  (app-name (package-name *package*))
-                  (procid "") (msgid "")
-                  (timestamp (epoch-to-syslog-time))
+  See documentation for ulog details not covered here.
+
+  ##Parameters##
+  name - Application name displayed in application name section if syslog message
+
+  facility - See ulog documentation for acceptable values
+
+  priority - See ulog documentation for acceptable values
+
+  text - Body of the message
+
+  option - Ignored, however parameter is necessary to maintain signature
+           compatibility with cl-syslog:log
+
+  :procid - See ulog documentation
+
+  :timestamp - See ulog documentation
+
+  :logger - See ulog documentation
+
+  ##Return values##
+  value of text parameter, on error condition will be thrown.  
+  "
+  `(ulog ,text :pri ,priority :fac ,facility :app-name ,name
+            :procid ,procid :timestamp ,timestamp :logger ,logger)
+  text
+  )
+
+(defun ulog ( msg &key pri fac 
+                  hostname app-name procid msgid timestamp
                   logger)
-  #||
+  "
   Streams a syslog formatted message (rfc5424) to a UDP destination.
   Below is a sample of the equivalant string representation of a syslog 
   message streamed with this function:
@@ -149,20 +198,21 @@
 
   :hostname
   Hostname defaults to (machine-instance)
-  ||#
+  "
   (ulog-raw
       (coerce (concatenate 'vector (babel:string-to-octets
                      (format nil "<~d>1 ~a ~a ~a ~a ~a ~a "
                              (+  (* 8 (syslog:get-facility (or fac :local7)))
                                  (syslog:get-priority (or pri :info)))
-                             timestamp 
-                             hostname 
-                             app-name
-                             (or procid "")
+                             (or timestamp (epoch-to-syslog-time)) 
+                             (or hostname (machine-instance)) 
+                             (or app-name (package-name *packge*))
+                             (or procid (getpid) "")
                              (or msgid "")
                              "-" ; Unimplemented structured data section
                              ))
                        #(#xef #xbb #xbf)
                        (babel:string-to-octets msg))
               '(vector (unsigned-byte 8)))
-      :logger logger))
+      :logger logger)
+)

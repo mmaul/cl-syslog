@@ -34,15 +34,16 @@ tweaked your /etc/syslog.conf.
 Remote Syslog Example:
     (require :cl-syslog)
     ;; Create global logger
-    (syslog-udp:udp-logger "127.0.0.1" 514)
+    (syslog.udp:udp-logger "127.0.0.1" 514)
 
     ;; Log a message
-    (syslog-udp:ulog "this is the message")
+    ;; (Note: the log function is signature compatible with cl-syslog:log)
+    (syslog.udp:log "MyApp" :local7 :info "this is the message")
 
-    ;; Log using a transient logger
+    ;; Log using a transient logger along with ulog function
     (syslog-udp:ulog "this is the message" :logger 
       (syslog-udp:udp-logger "192.168.0.5" 514 :transient t))
 
     ;; Log with prirority
-    (syslog-udp:ulog "this is an error" :pri :err)
+    (syslog.udp:ulog "this is an error" :pri :err)
 

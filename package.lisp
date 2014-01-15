@@ -15,10 +15,15 @@
              :+log-ndelay+ :+log-nowait+ :+log-perror+)
     (:documentation "Common Lisp interface to syslog."))
 
-  (cl:defpackage :cl-syslog-udp
-                 (:nicknames :syslog-udp)
+  (cl:defpackage :cl-syslog.udp
+                 (:nicknames :syslog.udp)
+                 (:shadow :log)
                  (:use :cl :babel :usocket)
-                 (:export :udp-logger :ulog :ulog-raw :epoch-to-syslog-time
-                          )
+                 (:export :log :udp-logger :ulog :ulog-raw :epoch-to-syslog-time)
+                 (:import-from :cl-syslog :get-priority :get-facility
+                               :+log-pid+ :+log-cons+ :+log-odelay+
+                               :+log-ndelay+ :+log-nowait+ :+log-perror+)
                  (:Documentation "UDP Syslog interface"))
   )
+
+  
