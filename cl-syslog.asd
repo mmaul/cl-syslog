@@ -15,17 +15,12 @@ package"))
 (defsystem cl-syslog
     :name "cl-syslog"
     :author "Erik Enge"
-    :version "0.1.0"
+    :version "0.2.0"
     :licence "MIT"
     :description "Common Lisp syslog interface"
     :depends-on (:cffi :usocket :simple-date-time)
-    :properties ((#:author-email . "cl-syslog-devel@common-lisp.net")
-                 (#:date . "$Date: 2006/11/28 19:46:09 $")
-                 ((#:albert #:output-dir) . "doc/api-doc/")
-                 ((#:albert #:formats) . ("docbook"))
-                 ((#:albert #:docbook #:template) . "book")
-                 ((#:albert #:docbook #:bgcolor) . "white")
-                 ((#:albert #:docbook #:textcolor) . "black"))
+    :properties ((#:author-email . "mike.maul@gmail.com")
+                 (#:date . "$Date: 2014/01/16 19:46:09 $"))
     :components ((:file "package")
                  (:file "variable"
                         :depends-on ("package"))
