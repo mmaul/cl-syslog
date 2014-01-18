@@ -206,7 +206,7 @@
                                  (syslog:get-priority (or pri :info)))
                              (or timestamp (epoch-to-syslog-time)) 
                              (or hostname (machine-instance)) 
-                             (or app-name (package-name *packge*))
+                             (or app-name (package-name *package*))
                              (or procid (getpid) "")
                              (or msgid "")
                              "-" ; Unimplemented structured data section
