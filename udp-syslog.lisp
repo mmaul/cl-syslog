@@ -110,6 +110,9 @@
 #+sbcl
 (defun getpid () (sb-unix:unix-getpid))
 
+#+:allegro
+(defun getpid () (excl.osi:getpid))
+
 (defun epoch-to-syslog-time (&optional epoch)
   "
   Syslog timestamp formatter defaults to current time.
