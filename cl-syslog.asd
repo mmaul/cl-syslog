@@ -31,3 +31,19 @@ package"))
                  ))
 
 
+(asdf:defsystem :cl-syslog-tests
+  :description "tests for cl-syslog library"
+  :version "0.2.0"
+  :author "Mike Maul <mike.maul@gmail.com>"
+  :licence "MIT"
+  :encoding :utf-8
+  :depends-on ("cl-syslog" "nst")
+  :components ((:module "tests"
+			:serial t
+			:components ((:file "package")
+				     (:file "tests")
+				     ))))
+(defmethod asdf:perform ((op asdf:test-op)
+                         (system (eql (asdf:find-system :cl-syslog))))
+  (asdf:load-system :cl-syslog-tests)
+  (funcall (find-symbol (symbol-name :run-tests) :cl-syslog-tests)))

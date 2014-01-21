@@ -15,7 +15,7 @@
 (define-condition unset-logger (error)
   ((msg :initarg :msg :reader msg)))
 
-(defun udp-logger ( host port &key transient)
+(defun udp-logger ( host &key (port 514) transient)
   "
   Constructs a UDP socket to host:port
   :transient returns udp socket with out setting global socket
