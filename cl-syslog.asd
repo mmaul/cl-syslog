@@ -15,7 +15,7 @@ package"))
 (defsystem cl-syslog
     :name "cl-syslog"
     :author "Erik Enge, Mike Maul"
-    :version "0.2.0"
+    :version "0.2.1"
     :licence "MIT"
     :description "Common Lisp syslog interface"
     :depends-on (:cffi :usocket :simple-date-time)
