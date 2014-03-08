@@ -25,6 +25,14 @@
       ( setf *udp-syslog-socket* ulogger))
     ulogger))
 
+(defun udp-logger-close (&optional udp-logger-socket)
+  "
+  Closes udp socket
+   "
+  (let ((sock  (or udp-logger-socket *udp-syslog-socket*)))
+    (socket-close sock) 
+    ))
+
 (defun ulog-raw (message &key logger)
   "
   Streams contents of message string to UDP destination.
@@ -216,6 +224,57 @@
                              ))
                        #(#xef #xbb #xbf)
                        (babel:string-to-octets msg))
+              '(vector (unsigned-byte 8)))
+      :logger logger)
+)
+#|
+26-Feb-2014 19:12:27.115 queries: info: client 134.67.18.22#49871: query: LC3040BJBRISB02.rtpnc.epa.gov IN A + (134.67.208.10)
+|#
+
+
+(defun ulog-min ( msg &key pri fac logger)
+  "
+  Streams a syslog formatted message (rfc5424) to a UDP destination.
+  Below is a sample of the equivalant string representation of a syslog 
+  message streamed with this function:
+    <165>1 2003-08-24T05:14:15.000003-07:00 192.0.2.1 myproc 8710 - - %% It's time to make the do-nuts.
+
+  ##Parameters##
+  The paremeters map into the syslog message as shown below
+  :PRI VERSION SP :TIMESTAMP SP :HOSTNAME
+       SP :APP-NAME SP :PROCID SP :MSGID SP STRUCTURED-DATA [SP :MSG]
+ 
+  :logger
+  The destination is specified by either setting the global udp logger by
+  calling the udp-logger function or by specifying a logger with the  
+  :logger parameter. 
+
+  :pri
+  Must be one of the following priorities (default :info)
+    :emerg   :alert   :crit :err
+    :warning :notice  :info :debug
+
+  :fac
+  Facility parameter  must be one of (default :local7)
+    :kern   :user    :mail     :daemon
+    :auth   :syslog  :lpr      :news
+    :uucp   :cron    :authpriv :ftp
+    :local0 :local1  :local2   :local3
+    :local4 :local5  :local6   :local7
+
+  :app-name
+  Application name defaults to *package*
+
+  :hostname
+  Hostname defaults to (machine-instance)
+  "
+  (ulog-raw
+      (coerce (concatenate 'vector (babel:string-to-octets
+                     (format nil "<~d> "
+                             (+  (* 1 (syslog:get-facility (or fac :local7)))
+                                 (syslog:get-priority (or pri :info)))
+                             ))
+                           (babel:string-to-octets msg))
               '(vector (unsigned-byte 8)))
       :logger logger)
 )

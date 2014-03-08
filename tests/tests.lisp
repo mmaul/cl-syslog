@@ -1,6 +1,10 @@
 
 (in-package :cl-syslog-tests)
 
+(nst:def-fixtures f-lo-logger
+                  (:cleanup (cl-syslog.udp:udp-logger-close lo-logger))
+                  (lo-logger (cl-syslog.udp:udp-logger "127.0.0.1" :transient t)))
+  
 (nst:def-test-group lookups ()
   (:documentation "Lookup functions")
 
@@ -22,10 +26,10 @@
 (nst:def-test-group udp-logging ()
   (:documentation "Test UDP logging and time")
 
-  (nst:def-test log-lo 
-      (:true) (> (cl-syslog.udp:ulog "Hello World" 
-		 :logger (cl-syslog.udp:udp-logger "127.0.0.1" 
-                 :transient t)) 0))
+  (nst:def-test (log-lo :fixtures (f-lo-logger)) 
+                (:true) (> (cl-syslog.udp:ulog "Hello World" :logger lo-logger)
+                           
+                 0))
 
   (nst:def-test test-epoch-to-syslog-time 
       (:equal "1969-12-31T19:00:0.0-5:00") (cl-syslog.udp:epoch-to-syslog-time 0))
