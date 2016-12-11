@@ -18,7 +18,7 @@ package"))
     :version "0.2.1"
     :licence "MIT"
     :description "Common Lisp syslog interface"
-    :depends-on (:cffi :usocket :simple-date-time)
+    :depends-on (:cffi :usocket :local-time)
     :properties ((#:author-email . "mike.maul@gmail.com")
                  (#:date . "$Date: 2014/01/16 19:46:09 $"))
     :components ((:file "package")

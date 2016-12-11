@@ -14,7 +14,7 @@
 
   (nst:def-test priorities 
       (:eql 4) (get-priority :warning))
-   
+
   (nst:def-test invalid-facilities 
       (:eql :fired) (handler-case (get-facility :misplaced)
 		      (invalid-facility () :fired)))
@@ -28,9 +28,9 @@
 
   (nst:def-test (log-lo :fixtures (f-lo-logger)) 
                 (:true) (> (cl-syslog.udp:ulog "Hello World" :logger lo-logger)
-                           
                  0))
 
   (nst:def-test test-epoch-to-syslog-time 
-      (:equal "1969-12-31T19:00:0.0-5:00") (cl-syslog.udp:epoch-to-syslog-time 0))
+      (:equal "1970-01-01T00:00:00.000000Z")
+              (cl-syslog.udp:epoch-to-syslog-time 0 :tz local-time:+GMT-ZONE+))
   )

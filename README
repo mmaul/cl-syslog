@@ -1,4 +1,4 @@
-CL-SYSLOG
+CL-SYSLOG [![Build Status](https://travis-ci.org/mmaul/clml.svg?branch=master)](https://travis-ci.org/mmaul/clml)
 =========
 Common Lisp interface to local and remote Syslog facilities.
 

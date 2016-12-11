@@ -121,20 +121,18 @@
 #+:allegro
 (defun getpid () (excl.osi:getpid))
 
-(defun epoch-to-syslog-time (&optional epoch)
+(defun epoch-to-syslog-time (&optional epoch &key (tz local-time:*DEFAULT-TIMEZONE*))
   "
   Syslog timestamp formatter defaults to current time.
   Optional arg epoch as epoch seconds
   Example format:2013-12-14T21:09:57.0Z-5
+  Timezone can be specified using local-time time zone variables
+  for example to specify GMT use local-time:+GMT-ZONE+
   "
-  (let ((v (if epoch (simple-date-time:from-posix-time epoch)
-             (simple-date-time:now))))
-    (format nil "~aT~a:~a.~d~a:00"
-            (simple-date-time:yyyy-mm-dd v)
-            (simple-date-time:|hh:mm| v)
-            (simple-date-time:SECOND-OF v)
-            (simple-date-time:MILLISECOND-OF v)
-            simple-date-time:*default-timezone*)))
+  (let ((time (if epoch (local-time:unix-to-timestamp epoch)
+             (local-time:now))))
+    (local-time:format-timestring nil time :timezone tz)
+    ))
 
 (defmacro log (name facility priority text &optional (option 0)
                     &key procid timestamp logger)
