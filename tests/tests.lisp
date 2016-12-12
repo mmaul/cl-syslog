@@ -23,6 +23,15 @@
       (:eql 32) (get-facility :auth))
   )
 
+(nst:def-test-group syslog-logging ()
+  (:documentation "Test Syslog logging")
+
+  (nst:def-test (log-syslog )
+      (:equal "Test cl-syslog-tests:log-syslog")
+      (syslog:log "myprog" :local7 :info "Test cl-syslog-tests:log-syslog")
+    )
+  )
+
 (nst:def-test-group udp-logging ()
   (:documentation "Test UDP logging and time")
 
