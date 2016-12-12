@@ -34,3 +34,16 @@
       (:equal "1970-01-01T00:00:00.000000Z")
               (cl-syslog.udp:epoch-to-syslog-time 0 :tz local-time:+GMT-ZONE+))
   )
+
+(defun run-all-tests ()
+  (run-tests)
+  (passed-testsp))
+
+(defun passed-testsp ()
+  (let ((tr (map 'list #'identity
+                 (nth-value 1
+                            (cl-ppcre:scan-to-strings "Package CL-SYSLOG-TESTS: (\\d+) of (\\d+) passed"
+                                                      (with-output-to-string (s)
+                                                        (nst-control-api:report-package 'cl-syslog-tests s)))))))
+    (if tr (apply #'string= tr) nil))
+  )

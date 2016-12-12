@@ -37,7 +37,7 @@ package"))
   :author "Mike Maul <mike.maul@gmail.com>"
   :licence "MIT"
   :encoding :utf-8
-  :depends-on ("cl-syslog" "nst")
+  :depends-on ("cl-syslog" "nst" :cl-ppcre)
   :components ((:module "tests"
 			:serial t
 			:components ((:file "package")
@@ -46,4 +46,4 @@ package"))
 (defmethod asdf:perform ((op asdf:test-op)
                          (system (eql (asdf:find-system :cl-syslog))))
   (asdf:load-system :cl-syslog-tests)
-  (funcall (find-symbol (symbol-name :run-tests) :cl-syslog-tests)))
+  (funcall (find-symbol (symbol-name :run-all-tests) :cl-syslog-tests)))

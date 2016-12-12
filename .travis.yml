@@ -41,5 +41,5 @@ cache:
 
 script:
   - ros -s prove -e '(ql:quickload :cl-syslog-tests)(in-package :cl-syslog-tests)
-         (unless (run-tests)
+         (unless (run-all-tests)
          (uiop:quit 1))'
