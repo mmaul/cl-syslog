@@ -1,49 +1,40 @@
-;;;; $Id: cl-syslog.asd,v 1.4 2006/11/28 19:46:09 lnostdal Exp $
-;;;; $Source: /project/cl-syslog/cvsroot/cl-syslog/cl-syslog.asd,v $
+(asdf:defsystem #:cl-syslog
+  :author "Erik Enge, Mike Maul"
+  :version (:read-file-form "VERSION.txt")
+  :licence "MIT (See LICENSE)"
+  :description "Common Lisp syslog interface."
+  :in-order-to ((asdf:test-op (asdf:test-op #:cl-syslog-tests)))
+  :depends-on (#:cl-syslog.local #:cl-syslog.udp))
 
-;;;; See the LICENSE file for licensing information.
+(asdf:defsystem #:cl-syslog.local
+  :license "MIT (See LICENSE)"
+  :version (:read-file-form "VERSION.txt")
+  :description "Local-only syslog logging."
+  :depends-on (#:cffi)
+  :serial t
+  :components ((:file "package")
+               (:file "variable")
+               (:file "cl-syslog")))
 
-(in-package #:cl-user)
-
-(defpackage #:cl-syslog-system
-    (:use #:cl #:asdf)
-  (:documentation "Package to create the ASDF system for the cl-syslog
-package"))
-
-(in-package #:cl-syslog-system)
-
-(defsystem cl-syslog
-    :name "cl-syslog"
-    :author "Erik Enge, Mike Maul"
-    :version "0.2.3"
-    :licence "MIT"
-    :description "Common Lisp syslog interface"
-    :depends-on (:cffi :usocket :local-time)
-    :properties ((#:author-email . "mike.maul@gmail.com")
-                 (#:date . "$Date: 2014/01/16 19:46:09 $"))
-    :components ((:file "package")
-                 (:file "variable"
-                        :depends-on ("package"))
-                 (:file "cl-syslog"
-                        :depends-on ("variable"))
-                 (:file "udp-syslog"
-                        :depends-on ("cl-syslog"))
-                 ))
+(asdf:defsystem #:cl-syslog.udp
+  :license "MIT (See LICENSE)"
+  :version (:read-file-form "VERSION.txt")
+  :description "Local-only syslog logging."
+  :depends-on (#:cl-syslog.local #:babel #:cffi #:usocket #:local-time)
+  :serial t
+  :components ((:file "package-udp")
+               (:file "udp-syslog")))
 
 
-(asdf:defsystem :cl-syslog-tests
+(asdf:defsystem #:cl-syslog-tests
   :description "tests for cl-syslog library"
-  :version "0.2.3"
+  :version (:read-file-form "VERSION.txt")
   :author "Mike Maul <mike.maul@gmail.com>"
   :licence "MIT"
-  :encoding :utf-8
-  :depends-on ("cl-syslog" "nst" :cl-ppcre)
-  :components ((:module "tests"
-			:serial t
-			:components ((:file "package")
-				     (:file "tests")
-				     ))))
-(defmethod asdf:perform ((op asdf:test-op)
-                         (system (eql (asdf:find-system :cl-syslog))))
-  (asdf:load-system :cl-syslog-tests)
-  (funcall (find-symbol (symbol-name :run-all-tests) :cl-syslog-tests)))
+  :depends-on (#:cl-syslog #:nst #:cl-ppcre)
+  :perform (asdf:test-op (o s)
+                         (uiop:symbol-call :cl-syslog-tests '#:run-all-tests))
+  :pathname "tests/"
+  :serial t
+  :components ((:file "package")
+               (:file "tests")))

@@ -7,7 +7,7 @@
 
 ;;;; See the LICENSE file for licensing information.
 
-(in-package :cl-syslog.udp)
+(in-package #:cl-syslog.udp)
 ;;
 
 (defparameter *udp-syslog-socket* nil)
@@ -15,23 +15,22 @@
 (define-condition unset-logger (error)
   ((msg :initarg :msg :reader msg)))
 
-(defun udp-logger ( host &key (port 514) transient)
+(defun udp-logger (host &key (port 514) transient)
   "
   Constructs a UDP socket to host:port
   :transient returns udp socket with out setting global socket
   "
-  (let ((ulogger  (usocket:socket-connect host port :protocol :datagram)))
-    (when (not  transient)
-      ( setf *udp-syslog-socket* ulogger))
+  (let ((ulogger (usocket:socket-connect host port :protocol :datagram)))
+    (when (not transient)
+      (setf *udp-syslog-socket* ulogger))
     ulogger))
 
 (defun udp-logger-close (&optional udp-logger-socket)
   "
   Closes udp socket
-   "
-  (let ((sock  (or udp-logger-socket *udp-syslog-socket*)))
-    (socket-close sock) 
-    ))
+  "
+  (let ((sock (or udp-logger-socket *udp-syslog-socket*)))
+    (socket-close sock)))
 
 (defun ulog-raw (message &key logger)
   "
