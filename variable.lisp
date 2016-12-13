@@ -1,9 +1,6 @@
-;;;; $Id: variable.lisp,v 1.1 2003/11/13 18:32:45 eenge Exp $
-;;;; $Source: /project/cl-syslog/cvsroot/cl-syslog/variable.lisp,v $
-
 ;;;; See the LICENSE file for licensing information.
 
-(in-package :syslog)
+(in-package #:syslog)
 
 (defparameter *priorities*
   '((:emerg . 0)

@@ -26,7 +26,7 @@
 (nst:def-test-group syslog-logging ()
   (:documentation "Test Syslog logging")
 
-  (nst:def-test (log-syslog )
+  (nst:def-test (log-syslog)
       (:equal "Test cl-syslog-tests:log-syslog")
       (syslog:log "myprog" :local7 :info "Test cl-syslog-tests:log-syslog")
     )
