@@ -36,7 +36,8 @@
 
 (cffi:defcfun "syslog" :void
   (priority :int)
-  (format :string)) 
+  (format :string)
+  &rest)
 
 ;;
 ;; Utility
@@ -62,8 +63,20 @@ such priority, signal `invalid-priority' error."
 (defun log (name facility priority text &optional (option 0) &rest r)
   "Print message to syslog.
 'option' can be any of the +log...+ constants"
-  (cffi:with-foreign-strings ((cname name) (ctext text))
-    (openlog cname option (get-facility facility))
-    (syslog (get-priority priority) ctext)
-    (closelog))
-  text)
+  (openlog name option (get-facility facility))
+  (syslog (get-priority priority) text)
+  (closelog)
+  text
+  )
+
+;; Still need to handle options
+;; example (format nil ,fmt ,@options-and-args)
+(defmacro logva (name facility priority fmt &rest options-and-args)
+  "Print message to syslog. and supports variable list of arguments for the printf style format string 'fmt'
+ Arguments for the fmt string must be prefixed by a keyword indicating tye argument type using
+ CFFI style type specifiers. for example for the fmt string \"MSG:%a %d\" :string \"Hello\" :int 2
+"
+  `(progn (openlog ,name 0 (get-facility ,facility))
+          (syslog (get-priority ,priority) ,fmt ,@options-and-args)
+          (closelog)
+          ))
