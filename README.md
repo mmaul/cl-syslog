@@ -47,4 +47,3 @@ Remote Syslog Example:
 
     ;; Log with prirority
     (syslog.udp:ulog "this is an error" :pri :err)
-
