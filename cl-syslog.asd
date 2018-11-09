@@ -10,11 +10,12 @@
   :license "MIT (See LICENSE)"
   :version (:read-file-form "VERSION.txt")
   :description "Local-only syslog logging."
-  :depends-on (#:cffi)
+  :depends-on (#:alexandria #:babel #:cffi)
   :serial t
   :components ((:file "package")
                (:file "variable")
-               (:file "cl-syslog")))
+               (:file "cl-syslog")
+               (:file "rfc5424")))
 
 (asdf:defsystem #:cl-syslog.udp
   :license "MIT (See LICENSE)"
