@@ -46,14 +46,14 @@
   "Return facility number given the facility's name.  If there is no
 such facility, signal `invalid-facility' error."
   (ash (or (cdr (assoc facility-name *facilities*))
-           (error (make-condition 'invalid-facility :facility facility-name)))
+           (error 'invalid-facility :facility facility-name))
        3))
 
 (defun get-priority (priority-name)
   "Return priority number given the priority's name.  If there is no
 such priority, signal `invalid-priority' error."
   (or (cdr (assoc priority-name *priorities*))
-      (error (make-condition 'invalid-priority :priority priority-name))))
+      (error 'invalid-priority :priority priority-name)))
 
 ;;
 ;; Log function
