@@ -708,7 +708,7 @@ The logging will only happen of LOGGER does not exceed a specified maximum prior
                                       ;; Do we allow repeats?
                                       (when (and recognized?
                                                  already-seen?
-                                                 (structured-data-field-description-repetitions-allowed-p field-descriptor))
+                                                 (not (structured-data-field-description-repetitions-allowed-p field-descriptor)))
                                         (error "Found a repeated field ~S for the structured data ~S, and that's not allowed here."
                                                key
                                                id))
