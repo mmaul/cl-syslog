@@ -596,6 +596,22 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
                                  #-(and sbcl unix) nil)
   (:documentation "Default class representing RFC 5424-compliant logging."))
 
+(defmethod shared-initialize :before ((logger rfc5424-logger) (slot-names t)
+                                        &key facility maximum-priority
+                                             hostname app-name process-id
+                                        &allow-other-keys)
+  ;; Do some sanity checking.
+  (assert (and (keywordp facility)
+               (get-facility facility)))
+  (assert (and (keywordp maximum-priority)
+               (get-priority maximum-priority)))
+  (assert (or (null hostname)
+              (stringp hostname)))
+  (assert (or (null app-name)
+              (stringp app-name)))
+  (assert (or (null process-id)
+              (stringp process-id))))
+
 (defgeneric current-time (logger)
   (:documentation "Return values YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, FRACTION-OF-A-SECOND.")
   (:method ((logger rfc5424-logger))
