@@ -604,8 +604,8 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
       (declare (ignore daylight-p zone weekday))
       (values year month day hour minute second nil))))
 
-(defgeneric log-string (logger priority control &rest args)
-  (:documentation "Log the simple message STRING according to the priority PRIORITY.
+(defgeneric format-log (logger priority control &rest args)
+  (:documentation "Log the simple message STRING according to the priority PRIORITY. Note that this function behaves like CL:FORMAT, so ~'s in the CONTROL string will be interpreted as such.
 
 This should be used in the simplest of logging situations. For more complicated log messages that contain structured data, see the RFC-LOG macro.")
   (:method ((logger rfc5424-logger) priority control &rest args)
