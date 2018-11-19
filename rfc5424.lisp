@@ -709,7 +709,7 @@ The logging will only happen of LOGGER does not exceed a specified maximum prior
         ;; anything costly if our priority isn't correct.
         `(unless (< (get-priority (logger-maximum-priority ,logger)) ',priority)
            (multiple-value-bind (,year ,month ,day ,hour ,minute ,second ,fraction)
-               (current-time logger)
+               (current-time ,logger)
              (with-output-to-string (,stream)
                (write-rfc5424-syslog-message ,stream
                                              (logior ',priority
