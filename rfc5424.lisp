@@ -7,6 +7,10 @@
 ;;; functions, refer to Section 6 "Syslog Message Format", which has
 ;;; the ABNF grammar for the messages.
 
+(alexandria:define-constant NILVALUE "-"
+  :test 'string=
+  :documentation "The RFC 5424 \"NILVALUE\".")
+
 (declaim (inline ascii-char-p))
 (defun ascii-char-p (c)
   (<= 0 (char-code c) 127))
@@ -126,8 +130,9 @@
            (<= 1 (length thing) 255))))
 
 (defun write-hostname (stream hostname)
-  (when hostname
-    (write-string hostname stream))
+  (cond
+    ((null hostname) (write-string NILVALUE stream))
+    (t (write-string hostname stream)))
   nil)
 
 
@@ -139,8 +144,9 @@
            (<= 1 (length thing) 48))))
 
 (defun write-app-name (stream app-name)
-  (when app-name
-    (write-string app-name stream))
+  (cond
+    ((null app-name) (write-string NILVALUE stream))
+    (t (write-string app-name stream)))
   nil)
 
 
@@ -152,8 +158,9 @@
            (<= 1 (length thing) 128))))
 
 (defun write-procid (stream procid)
-  (when procid
-    (write-string procid stream))
+  (cond
+    ((null procid) (write-string NILVALUE stream))
+    (t (write-string procid stream)))
   nil)
 
 
@@ -165,8 +172,9 @@
            (<= 1 (length thing) 32))))
 
 (defun write-msgid (stream msgid)
-  (when msgid
-    (write-string msgid stream))
+  (cond
+    ((null msgid) (write-string NILVALUE stream))
+    (t (write-string msgid stream)))
   nil)
 
 
@@ -347,13 +355,17 @@ Return two values:
     (write-char #\Space stream)
     (write-param-name stream (param-name param))
     (write-char #\= stream)
-    (write-param-value stream (param-value param)))
+    (write-char #\" stream)
+    (write-param-value stream (param-value param))
+    (write-char #\" stream))
   (write-char #\] stream)
   nil)
 
 (defun write-sd-elements (stream elts)
-  (dolist (elt elts)
-    (write-sd-element stream elt)))
+  (cond
+    ((null elts) (write-string NILVALUE stream))
+    (t (dolist (elt elts)
+         (write-sd-element stream elt)))))
 
 
 ;;; Section 7. Structure Data IDs
@@ -491,6 +503,10 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
   ;; Only write a space if we have a MSG.
   (when msg
     (write-char #\Space stream)
+    ;; BOM
+    ;; (write-byte #xEF stream)
+    ;; (write-byte #xBB stream)
+    ;; (write-byte #xBF stream)
     (write-msg stream msg))
 
   ;; Done. Don't return anything useful.
@@ -586,7 +602,7 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
     (multiple-value-bind (second minute hour day month year weekday daylight-p zone)
         (decode-universal-time (get-universal-time) 0) ; 0 for GMT
       (declare (ignore daylight-p zone weekday))
-      (values year month day hour minute second 0))))
+      (values year month day hour minute second nil))))
 
 (defgeneric log-string (logger priority control &rest args)
   (:documentation "Log the simple message STRING according to the priority PRIORITY.
@@ -674,12 +690,13 @@ The logging will only happen of LOGGER does not exceed a specified maximum prior
                                                id))
 
                                       ;; Do we allow repeats?
-                                      (unless (and recognized?
-                                                   already-seen?
-                                                   (structured-data-field-description-repetitions-allowed-p field-descriptor))
+                                      (when (and recognized?
+                                                 already-seen?
+                                                 (structured-data-field-description-repetitions-allowed-p field-descriptor))
                                         (error "Found a repeated field ~S for the structured data ~S, and that's not allowed here."
                                                key
                                                id))
+                                      (pushnew key seen :test #'string=)
                                       ;; Create the param constructor.
                                       `(make-param ',(string key)
                                                    ,val-form))
