@@ -595,18 +595,27 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
    (app-name :initarg :app-name
              :reader logger-app-name)
    (process-id :initarg :process-id
-               :reader logger-process-id))
+               :reader logger-process-id)
+   (log-function :initarg :log-function
+                 :reader logger-log-function
+                 :documentation "A binary function that takes a priority keyword and a string and returns an unspecified value. This is the function that received log messages and does whatever is desired. A NIL initarg (the default) means strings will be logged to syslog with the associated facility.
+
+A value of (CONSTANTLY NIL) is appropriate if no action is desired.
+
+A value akin to (lambda (p s) (write-line s)) is appropriate if all log messages should go to *STANDARD-OUTPUT*."))
   (:default-initargs :maximum-priority ':info
                      :hostname (machine-instance)
                      :app-name nil
                      :process-id #+(and sbcl unix) (prin1-to-string (sb-posix:getpid))
-                                 #-(and sbcl unix) nil)
-  (:documentation "Default class representing RFC 5424-compliant logging."))
+                                 #-(and sbcl unix) nil
+                     :log-function nil)
+  (:documentation "Class holding the state to construct and transmit an RFC 5424-compliant log message."))
 
-(defmethod shared-initialize :before ((logger rfc5424-logger) (slot-names t)
-                                        &key facility maximum-priority
-                                             hostname app-name process-id
-                                        &allow-other-keys)
+(defmethod shared-initialize :around ((logger rfc5424-logger) (slot-names t)
+                                      &key facility maximum-priority
+                                           hostname app-name process-id
+                                           log-function
+                                      &allow-other-keys)
   ;; Do some sanity checking.
   (assert (and (keywordp facility)
                (get-facility facility)))
@@ -617,7 +626,18 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
   (assert (or (null app-name)
               (stringp app-name)))
   (assert (or (null process-id)
-              (stringp process-id))))
+              (stringp process-id)))
+  (assert (or (null log-function)
+              (symbolp log-function)
+              (functionp log-function)))
+  ;; Call the primary method.
+  (call-next-method)
+  ;; Default function is one that logs to syslog.
+  (when (null log-function)
+    (let ((app-name (or app-name "")))
+      (setf (slot-value logger 'log-function)
+            (lambda (priority string)
+              (log app-name facility priority string))))))
 
 (defgeneric current-time (logger)
   (:documentation "Return values YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, FRACTION-OF-A-SECOND.")
@@ -633,26 +653,30 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
 This should be used in the simplest of logging situations. For more complicated log messages that contain structured data, see the RFC-LOG macro.")
   (:method ((logger rfc5424-logger) priority control &rest args)
     (unless (< (get-priority (logger-maximum-priority logger)) (get-priority priority))
-      (multiple-value-bind (year month day hour minute second fraction)
-          (current-time logger)
-        (with-output-to-string (stream)
-          (write-rfc5424-syslog-message stream
-                                        (logior (get-priority priority)
-                                                ;; facility is already shifted by 3 bits
-                                                (get-facility (logger-facility logger)))
-                                        year
-                                        month
-                                        day
-                                        hour
-                                        minute
-                                        second
-                                        fraction
-                                        (logger-hostname logger)
-                                        (logger-app-name logger)
-                                        (logger-process-id logger)
-                                        nil ; msgid
-                                        nil ; sd-elements
-                                        (apply #'format nil control args)))))))
+      (funcall
+       (logger-log-function logger)
+       priority
+       (multiple-value-bind (year month day hour minute second fraction)
+           (current-time logger)
+         (with-output-to-string (stream)
+           (write-rfc5424-syslog-message stream
+                                         (logior (get-priority priority)
+                                                 ;; facility is already shifted by 3 bits
+                                                 (get-facility (logger-facility logger)))
+                                         year
+                                         month
+                                         day
+                                         hour
+                                         minute
+                                         second
+                                         fraction
+                                         (logger-hostname logger)
+                                         (logger-app-name logger)
+                                         (logger-process-id logger)
+                                         nil ; msgid
+                                         nil ; sd-elements
+                                         (apply #'format nil control args)))))
+      nil)))
 
 (defmacro rfc-log ((logger priority control &rest args) &body structured-data)
   "Log the message formed by CONTROL and ARGS to the logger LOGGER with priority PRIORITY. Structured data should be a list of structured data clauses of the form, where each clause has the form:
@@ -672,8 +696,6 @@ The logging will only happen of LOGGER does not exceed a specified maximum prior
   (assert (keywordp priority))
   ;; Change PRIORITY into its numerical value. This also provides
   ;; compile-time checking that PRIORITY is valid.
-  (setf priority (get-priority priority))
-
   (let* ((msgid-form nil)
          (sd-forms
            ;; Parse out the structured data.
@@ -730,25 +752,29 @@ The logging will only happen of LOGGER does not exceed a specified maximum prior
       (alexandria:once-only (logger)
         ;; Generate the logging code. Do *NOT* evaluate anything or do
         ;; anything costly if our priority isn't correct.
-        `(unless (< (get-priority (logger-maximum-priority ,logger)) ',priority)
-           (multiple-value-bind (,year ,month ,day ,hour ,minute ,second ,fraction)
-               (current-time ,logger)
-             (with-output-to-string (,stream)
-               (write-rfc5424-syslog-message ,stream
-                                             (logior ',priority
-                                                     ;; facility is already shifted by 3 bits
-                                                     (get-facility (logger-facility ,logger)))
-                                             ,year
-                                             ,month
-                                             ,day
-                                             ,hour
-                                             ,minute
-                                             ,second
-                                             ,fraction
-                                             (logger-hostname ,logger)
-                                             (logger-app-name ,logger)
-                                             (logger-process-id ,logger)
-                                             ,msgid-form
-                                             (list ,@sd-forms)
-                                             (format nil ,control ,@args)))))))))
-
+        `(unless (< (get-priority (logger-maximum-priority ,logger)) ',(get-priority priority))
+           (funcall
+            (logger-log-function ,logger)
+            ',priority
+            (multiple-value-bind (,year ,month ,day ,hour ,minute ,second ,fraction)
+                (current-time ,logger)
+              (with-output-to-string (,stream)
+                ;;babel-streams:with-output-to-sequence (,stream :external-format (babel-encodings:get-character-encoding :utf-8))
+                (write-rfc5424-syslog-message ,stream
+                                              (logior ',(get-priority priority)
+                                                      ;; facility is already shifted by 3 bits
+                                                      (get-facility (logger-facility ,logger)))
+                                              ,year
+                                              ,month
+                                              ,day
+                                              ,hour
+                                              ,minute
+                                              ,second
+                                              ,fraction
+                                              (logger-hostname ,logger)
+                                              (logger-app-name ,logger)
+                                              (logger-process-id ,logger)
+                                              ,msgid-form
+                                              (list ,@sd-forms)
+                                              (format nil ,control ,@args)))))
+           nil)))))
