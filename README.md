@@ -157,6 +157,21 @@ message ID is `"LOG1234"`, then we could write the above message as:
 <132>1 2018-12-13T22:29:36Z computer.local MyApp 69840 LOG1234 [origin ip="1.2.3.4" software="My Testing App" swVersion="12.2"][mycompany@0001 who="John Doe" what="Needs to buy a new computer."] Running out of memory! I got 10 bytes left!
 ```
 
+### RFC 5424 Caveats
+
+Currently, Unicode isn't properly handled. It is expected all data is
+ASCII. It is also expect your Lisp's `char-code` matches ASCII. The
+necessary BOM will not be inserted for Unicode.
+
+The RFC 5424 log handling functions generally write to streams, but
+the entry points cons up strings (if and only if the log message is
+actually sent). There is currently no support for allowing streaming
+log data at the log generation level.
+
+Many log processors do not implement all of RFC 5424, but nonetheless
+cope rather well with the format, and can understand the RFC's
+`key=value` pairs.
+
 ### Raw C Functions
 
 The raw C interfaces are CFFI-accessible by their standard UNIX names:
