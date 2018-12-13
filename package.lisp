@@ -8,29 +8,38 @@
   (:shadow #:log)
   ;; *FEATURES* symbols
   (:export #:rfc5424)
+  ;; Raw C interface
+  (:export
+   #:openlog
+   #:closelog
+   #:syslog)
+
   ;; Basic syslog logging interface.
-  (:export #:log
-           #:get-facility
-           #:get-priority
-           #:+log-pid+
-           #:+log-cons+
-           #:+log-odelay+
-           #:+log-ndelay+
-           #:+log-nowait+
-           #:+log-perror+
-           #:invalid-priority
-           #:invalid-facility)
+  (:export
+   #:log
+   #:get-facility
+   #:get-priority
+   #:+log-pid+
+   #:+log-cons+
+   #:+log-odelay+
+   #:+log-ndelay+
+   #:+log-nowait+
+   #:+log-perror+
+   #:invalid-priority
+   #:invalid-facility)
+
   ;; RFC 5424 logging
-  (:export #:define-structured-data-id  ; MACRO
-           #:malformed-rfc5424-input    ; CONDITION
-           #:stream-log-writer          ; FUNCTION
-           #:tee-to-stream              ; FUNCTION
-           #:udp-log-writer             ; FUNCTION
-           #:rfc5424-logger             ; CLASS
-           #:current-time               ; GENERIC, METHOD
-           #:log-string                 ; GENERIC, METHOD
-           #:rfc-log                    ; MACRO
-           )
+  (:export
+   #:define-structured-data-id  ; MACRO
+   #:malformed-rfc5424-input    ; CONDITION
+   #:stream-log-writer          ; FUNCTION
+   #:tee-to-stream              ; FUNCTION
+   #:udp-log-writer             ; FUNCTION
+   #:rfc5424-logger             ; CLASS
+   #:current-time               ; GENERIC, METHOD
+   #:format-log                 ; GENERIC, METHOD
+   #:rfc-log                    ; MACRO
+   )
   ;; RFC 5424 IETF-reserved structured data names
   (:export
    #:|timeQuality|
