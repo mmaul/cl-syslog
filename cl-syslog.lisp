@@ -1,9 +1,6 @@
-;;;; $Id: cl-syslog.lisp,v 1.3 2006/11/28 19:46:09 lnostdal Exp $
-;;;; $Source: /project/cl-syslog/cvsroot/cl-syslog/cl-syslog.lisp,v $
-
 ;;;; See the LICENSE file for licensing information.
 
-(in-package :syslog)
+(in-package #:syslog)
 
 ;;
 ;; Condition
@@ -36,7 +33,8 @@
 
 (cffi:defcfun "syslog" :void
   (priority :int)
-  (format :string)) 
+  (format :string)
+  &rest)
 
 ;;
 ;; Utility
@@ -59,11 +57,11 @@ such priority, signal `invalid-priority' error."
 ;; Log function
 ;;
 
-(defun log (name facility priority text &optional (option 0) &rest r)
+(defun log (name facility priority text &optional (option 0))
   "Print message to syslog.
 'option' can be any of the +log...+ constants"
   (cffi:with-foreign-strings ((cname name) (ctext text))
     (openlog cname option (get-facility facility))
-    (syslog (get-priority priority) ctext)
+    (syslog (get-priority priority) "%s" :string ctext)
     (closelog))
   text)
