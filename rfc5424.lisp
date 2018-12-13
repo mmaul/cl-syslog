@@ -605,7 +605,7 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
 (defclass rfc5424-logger ()
   ((facility :initarg :facility
              :reader logger-facility
-             :documentation "The syslog facility, as a keyword. This is a required slot.")
+             :documentation "The syslog facility, as a keyword.")
    (maximum-priority :initarg :maximum-priority
                      :reader logger-maximum-priority
                      :documentation "The maximum priority above which log messages are not emitted to the external logging facility. The default maximum priority is :INFO. (Recall that priorities of *increasing* severity have *decreasing* priority values.)")
@@ -626,7 +626,8 @@ Example: A value akin to (lambda (p s) (write-line s)) is appropriate if all log
 Note: This isn't a \"writer\" in the usual CLOS sense.
 
 See also: The functions STREAM-LOG-WRITER, TEE-TO-STREAM, UDP-LOG-WRITER."))
-  (:default-initargs :maximum-priority ':info
+  (:default-initargs :facility ':user
+                     :maximum-priority ':info
                      :hostname (machine-instance)
                      :app-name nil
                      :process-id #+(and sbcl unix) (prin1-to-string (sb-posix:getpid))

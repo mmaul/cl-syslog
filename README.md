@@ -48,10 +48,9 @@ support it by checking if `cl-syslog::rfc5424` is present in your
 `*features*`.)
 
 The first thing you'll need to do is create an instance of the
-`rfc5424-logger` class, filling out as many requisite details as you
-please. The only required slot is `:facility`, but you're encouraged
-to fill out as many slots as you can so that log messages contain more
-information.
+`rfc5424-logger` class, filling out as many details as you
+please. You're encouraged to fill out as many slots as you can so that
+log messages contain more information.
 
 Of particular interest is the `:log-writer` initarg. This controls how
 log messages get processed in the end. The default log writer will use
@@ -62,8 +61,8 @@ in writing to standard output, you can supply
 ```
 (defparameter *logger*
  (make-instance 'cl-syslog:rfc5424-logger
-                :facility ':local0
                 ;; optional
+                :facility ':local0
                 :app-name "MyApp"
                 :hostname "computer.local"
                 :log-writer (cl-syslog:stream-log-writer)))
@@ -134,6 +133,8 @@ the following:
     (|mycompany@0001|
      |who| "John Doe"
      |what| "Needs to buy a new computer."))
+
+;; output:
 <132>1 2018-12-13T22:28:02Z computer.local MyApp 69840 - [origin ip="1.2.3.4" software="My Testing App" swVersion="12.2"][mycompany@0001 who="John Doe" what="Needs to buy a new computer."] Running out of memory! I got 10 bytes left!
 ```
 
@@ -151,6 +152,8 @@ message ID is `"LOG1234"`, then we could write the above message as:
     (|mycompany@0001|
      |who| "John Doe"
      |what| "Needs to buy a new computer."))
+
+;; output:
 <132>1 2018-12-13T22:29:36Z computer.local MyApp 69840 LOG1234 [origin ip="1.2.3.4" software="My Testing App" swVersion="12.2"][mycompany@0001 who="John Doe" what="Needs to buy a new computer."] Running out of memory! I got 10 bytes left!
 ```
 
