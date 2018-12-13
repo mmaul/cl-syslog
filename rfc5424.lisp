@@ -452,7 +452,9 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
 ;;; Section 6.4. MSG
 ;;;
 ;;; This is the user-supplied message. The RFC asks for the message to
-;;; be Unicode, formatted as UTF-8, but does not require it.
+;;; be Unicode, formatted as UTF-8, but does not require it. For the
+;;; purposes of this library, we are currently assuming ASCII messages
+;;; only.
 
 (defun write-msg (stream string)
   ;; TODO: Deal with the BOM for UTF8 payload.
@@ -513,14 +515,18 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
   nil)
 
 (define-condition malformed-rfc5424-input (error)
-  ()
+  ((violated-assertion :initarg :violated-assertion
+                       :reader violated-assertion))
   (:report (lambda (condition stream)
-             (declare (ignore condition))
-             (format stream "Malformed input for RFC 5424 syslog message."))))
+             (format stream "Malformed input for RFC 5424 syslog message. ~
+                             The violated assertion was~%~S"
+                     (violated-assertion condition)))))
 
 (defmacro assert-rfc5424 (thing)
+  ;; Like the ASSERT macro, but intended specifically for RFC5424
+  ;; syntax violations.
   `(unless ,thing
-     (error 'malformed-rfc5424-input)))
+     (error 'malformed-rfc5424-input :violated-assertion ',thing)))
 
 (defun write-rfc5424-syslog-message (stream
                                      pri
@@ -579,7 +585,8 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
 
 (defclass rfc5424-logger ()
   ((facility :initarg :facility
-             :reader logger-facility)
+             :reader logger-facility
+             :documentation "The syslog facility, as a keyword. This is a required slot.")
    (maximum-priority :initarg :maximum-priority
                      :reader logger-maximum-priority
                      :documentation "The maximum priority above which log messages are not emitted to the external logging facility. The default maximum priority is :INFO. (Recall that priorities of *increasing* severity have *decreasing* priority values.)")
