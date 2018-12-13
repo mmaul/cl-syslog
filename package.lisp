@@ -1,9 +1,13 @@
 ;;;; See the LICENSE file for licensing information.
 
+(in-package #:cl-user)
+
 (defpackage #:cl-syslog
   (:nicknames #:syslog)
   (:use #:cl)
   (:shadow #:log)
+  ;; *FEATURES* symbols
+  (:export #:rfc5424)
   ;; Basic syslog logging interface.
   (:export #:log
            #:get-facility
@@ -43,7 +47,8 @@
    #:|language|)
   (:documentation "Common Lisp interface to syslog."))
 
-
-
-
-  
+(eval-when (:load-toplevel :execute)
+  ;; :CL-SYSLOG-RFC5424 indicates that the loaded syslog conforms to
+  ;; the RFC 5424 standard. We sould like to indicate this feature is
+  ;; present only until after the logging library is loaded.
+  (pushnew 'cl-syslog::rfc5424 *features*))
