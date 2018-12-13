@@ -16,7 +16,7 @@
   ;; TODO: actually parse an IP address
   t)
 
-(Define-structured-data-id |origin| (:standard t)
+(define-structured-data-id |origin| (:standard t)
   (|ip| :allow-repetitions t
         :validator 'ip-address-p)
   |enterpriseId|
