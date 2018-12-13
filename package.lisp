@@ -23,6 +23,9 @@
   ;; RFC 5424 logging
   (:export #:define-structured-data-id  ; MACRO
            #:malformed-rfc5424-input    ; CONDITION
+           #:stream-log-writer          ; FUNCTION
+           #:tee-to-stream              ; FUNCTION
+           #:udp-log-writer             ; FUNCTION
            #:rfc5424-logger             ; CLASS
            #:current-time               ; GENERIC, METHOD
            #:log-string                 ; GENERIC, METHOD

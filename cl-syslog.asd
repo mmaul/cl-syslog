@@ -10,7 +10,7 @@
   :license "MIT (See LICENSE)"
   :version (:read-file-form "VERSION.txt")
   :description "Local-only syslog logging."
-  :depends-on (#:alexandria #:cffi #:global-vars)
+  :depends-on (#:alexandria #:cffi #:global-vars #:usocket)
   :serial t
   :components ((:file "package")
                (:file "variable")

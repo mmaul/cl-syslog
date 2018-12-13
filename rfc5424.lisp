@@ -583,6 +583,25 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
 ;;; This isn't specified by RFC, but makes this file convenient to
 ;;; use.
 
+(defun stream-log-writer (&optional (stream *standard-output*))
+  "Create a log function (for an RFC5424-LOGGER instance) that writes to STREAM. By default this is *STANDARD-OUTPUT*."
+  (lambda (priority string)
+    (declare (ignore priority))
+    (write-line string stream)))
+
+(defun tee-to-stream (log-writer &optional (stream *standard-output*))
+  "Create a log writer (for an RFC5424-LOGGER instance) that writes to STREAM, but is also processed by LOG-WRITER."
+  (lambda (priority string)
+    (write-line string stream)
+    (funcall log-writer priority string)))
+
+(defun udp-log-writer (host port)
+  "Create a log writer (for an RFC5424-LOGGER instance) that writes to the UDP endpoint HOST on poort PORT."
+  (let ((sock (usocket:socket-connect host port :protocol :datagram)))
+    (lambda (priority string)
+      (declare (ignore priority))
+      (usocket:socket-send sock string (length string)))))
+
 (defclass rfc5424-logger ()
   ((facility :initarg :facility
              :reader logger-facility
@@ -596,25 +615,29 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
              :reader logger-app-name)
    (process-id :initarg :process-id
                :reader logger-process-id)
-   (log-function :initarg :log-function
-                 :reader logger-log-function
-                 :documentation "A binary function that takes a priority keyword and a string and returns an unspecified value. This is the function that received log messages and does whatever is desired. A NIL initarg (the default) means strings will be logged to syslog with the associated facility.
+   (log-writer :initarg :log-writer
+               :reader logger-log-writer
+               :documentation "A binary function that takes a priority keyword and a string and returns an unspecified value. This is the function that received log messages and does whatever is desired. A NIL initarg (the default) means strings will be logged to syslog with the associated facility.
 
-A value of (CONSTANTLY NIL) is appropriate if no action is desired.
+Example: A value of (CONSTANTLY NIL) is appropriate if no action is desired.
 
-A value akin to (lambda (p s) (write-line s)) is appropriate if all log messages should go to *STANDARD-OUTPUT*."))
+Example: A value akin to (lambda (p s) (write-line s)) is appropriate if all log messages should go to *STANDARD-OUTPUT*. Note that this can be done with (STREAM-LOG-WRITER).
+
+Note: This isn't a \"writer\" in the usual CLOS sense.
+
+See also: The functions STREAM-LOG-WRITER, TEE-TO-STREAM, UDP-LOG-WRITER."))
   (:default-initargs :maximum-priority ':info
                      :hostname (machine-instance)
                      :app-name nil
                      :process-id #+(and sbcl unix) (prin1-to-string (sb-posix:getpid))
                                  #-(and sbcl unix) nil
-                     :log-function nil)
+                     :log-writer nil)
   (:documentation "Class holding the state to construct and transmit an RFC 5424-compliant log message."))
 
 (defmethod shared-initialize :around ((logger rfc5424-logger) (slot-names t)
                                       &key facility maximum-priority
                                            hostname app-name process-id
-                                           log-function
+                                           log-writer
                                       &allow-other-keys)
   ;; Do some sanity checking.
   (assert (and (keywordp facility)
@@ -627,15 +650,15 @@ A value akin to (lambda (p s) (write-line s)) is appropriate if all log messages
               (stringp app-name)))
   (assert (or (null process-id)
               (stringp process-id)))
-  (assert (or (null log-function)
-              (symbolp log-function)
-              (functionp log-function)))
+  (assert (or (null log-writer)
+              (symbolp log-writer)
+              (functionp log-writer)))
   ;; Call the primary method.
   (call-next-method)
   ;; Default function is one that logs to syslog.
-  (when (null log-function)
+  (when (null log-writer)
     (let ((app-name (or app-name "")))
-      (setf (slot-value logger 'log-function)
+      (setf (slot-value logger 'log-writer)
             (lambda (priority string)
               (log app-name facility priority string))))))
 
@@ -654,7 +677,7 @@ This should be used in the simplest of logging situations. For more complicated 
   (:method ((logger rfc5424-logger) priority control &rest args)
     (unless (< (get-priority (logger-maximum-priority logger)) (get-priority priority))
       (funcall
-       (logger-log-function logger)
+       (logger-log-writer logger)
        priority
        (multiple-value-bind (year month day hour minute second fraction)
            (current-time logger)
@@ -754,7 +777,7 @@ The logging will only happen of LOGGER does not exceed a specified maximum prior
         ;; anything costly if our priority isn't correct.
         `(unless (< (get-priority (logger-maximum-priority ,logger)) ',(get-priority priority))
            (funcall
-            (logger-log-function ,logger)
+            (logger-log-writer ,logger)
             ',priority
             (multiple-value-bind (,year ,month ,day ,hour ,minute ,second ,fraction)
                 (current-time ,logger)
