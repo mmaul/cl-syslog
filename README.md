@@ -18,7 +18,7 @@ looking at them, but here's a quickstart guide.
 To load `cl-syslog`, use Quicklisp or ASDF as usual:
 
 ```
-> (ql:quickload :cl-syslog)`
+> (ql:quickload :cl-syslog)
 ;; or, if ASDF can already see it:
 > (asdf:load-system :cl-syslog)
 ```
@@ -89,10 +89,11 @@ by "structured data IDs", and the standard IDs are `timeQuality`,
 parameters.
 
 Personal structured data IDs must have some name, followed by `@`,
-followed by a usually 5 digit integer. For instance, `mycompany@0001`
-is a valid personal structured data ID. One can define a structured
-data ID using `cl-syslog:define-structured-data-id`. The definition of
-the standard `origin` ID is:
+followed by a usually 4 or 5 digit integer. For instance,
+`mycompany@0001` is a valid personal structured data ID. One can
+define a structured data ID using
+`cl-syslog:define-structured-data-id`. The definition of the standard
+`origin` ID is:
 
 ```
 (define-structured-data-id |origin| (:standard t)
@@ -160,8 +161,8 @@ message ID is `"LOG1234"`, then we could write the above message as:
 ### RFC 5424 Caveats
 
 Currently, Unicode isn't properly handled. It is expected all data is
-ASCII. It is also expect your Lisp's `char-code` matches ASCII. The
-necessary BOM will not be inserted for Unicode.
+ASCII. It is also expect that your Lisp's `char-code` matches
+ASCII. The necessary BOM will not be inserted for Unicode.
 
 The RFC 5424 log handling functions generally write to streams, but
 the entry points cons up strings (if and only if the log message is
