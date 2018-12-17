@@ -583,17 +583,37 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
 ;;; This isn't specified by RFC, but makes this file convenient to
 ;;; use.
 
+;; We make this a function-returning-function just because it mirrors
+;; what the rest of them do.
+(defun null-log-writer ()
+  "Create a log writer (for an RFC5424-LOGGER instance) that does nothing."
+  (lambda (priority string)
+    (declare (ignore priority string))
+    nil))
+
+(defun syslog-log-writer (app-name facility)
+  "Create a log writer (for an RFC5424-LOGGER instance) that writes to the system's syslog."
+  (check-type app-name string)
+  (assert (and (keywordp facility)
+               (get-facility facility)))
+  (lambda (priority string)
+    (log app-name facility priority string)))
+
 (defun stream-log-writer (&optional (stream *standard-output*))
   "Create a log function (for an RFC5424-LOGGER instance) that writes to STREAM. By default this is *STANDARD-OUTPUT*."
   (lambda (priority string)
     (declare (ignore priority))
     (write-line string stream)))
 
+(defun join-log-writers (&rest writers)
+  "Create a new log writer (for an RFC5424-LOGGER instance) joining the effects of each of the supplied log writers WRITERS."
+  (lambda (priority string)
+    (dolist (writer writers)
+      (funcall writer priority string))))
+
 (defun tee-to-stream (log-writer &optional (stream *standard-output*))
   "Create a log writer (for an RFC5424-LOGGER instance) that writes to STREAM, but is also processed by LOG-WRITER."
-  (lambda (priority string)
-    (write-line string stream)
-    (funcall log-writer priority string)))
+  (join-log-writers (stream-log-writer stream) log-writer))
 
 (defun udp-log-writer (host port)
   "Create a log writer (for an RFC5424-LOGGER instance) that writes to the UDP endpoint HOST on poort PORT."
@@ -617,7 +637,7 @@ The :VALIDATOR keyword allows a validating function to be provided. By default i
                :reader logger-process-id)
    (log-writer :initarg :log-writer
                :reader logger-log-writer
-               :documentation "A binary function that takes a priority keyword and a string and returns an unspecified value. This is the function that received log messages and does whatever is desired. A NIL initarg (the default) means strings will be logged to syslog with the associated facility.
+               :documentation "A binary function that takes a priority keyword and a string and returns an unspecified value. This is the function that received log messages and does whatever is desired. A NIL initarg (the default) means strings will be logged to syslog with the associated facility (as if by SYSLOG-LOG-WRITER).
 
 Example: A value of (CONSTANTLY NIL) is appropriate if no action is desired.
 
@@ -625,7 +645,7 @@ Example: A value akin to (lambda (p s) (write-line s)) is appropriate if all log
 
 Note: This isn't a \"writer\" in the usual CLOS sense.
 
-See also: The functions STREAM-LOG-WRITER, TEE-TO-STREAM, UDP-LOG-WRITER."))
+See also: The functions NULL-LOG-WRITER, SYSLOG-LOG-WRITER, STREAM-LOG-WRITER, TEE-TO-STREAM, UDP-LOG-WRITER."))
   (:default-initargs :facility ':user
                      :maximum-priority ':info
                      :hostname (machine-instance)
@@ -660,8 +680,7 @@ See also: The functions STREAM-LOG-WRITER, TEE-TO-STREAM, UDP-LOG-WRITER."))
   (when (null log-writer)
     (let ((app-name (or app-name "")))
       (setf (slot-value logger 'log-writer)
-            (lambda (priority string)
-              (log app-name facility priority string))))))
+            (syslog-log-writer app-name facility)))))
 
 (defgeneric current-time (logger)
   (:documentation "Return values YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, FRACTION-OF-A-SECOND.")

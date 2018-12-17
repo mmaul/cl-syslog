@@ -30,15 +30,18 @@
 
   ;; RFC 5424 logging
   (:export
-   #:define-structured-data-id  ; MACRO
-   #:malformed-rfc5424-input    ; CONDITION
-   #:stream-log-writer          ; FUNCTION
-   #:tee-to-stream              ; FUNCTION
-   #:udp-log-writer             ; FUNCTION
-   #:rfc5424-logger             ; CLASS
-   #:current-time               ; GENERIC, METHOD
-   #:format-log                 ; GENERIC, METHOD
-   #:rfc-log                    ; MACRO
+   #:define-structured-data-id          ; MACRO
+   #:malformed-rfc5424-input            ; CONDITION
+   #:null-log-writer                    ; FUNCTION
+   #:syslog-log-writer                  ; FUNCTION
+   #:stream-log-writer                  ; FUNCTION
+   #:udp-log-writer                     ; FUNCTION
+   #:tee-to-stream                      ; FUNCTION
+   #:join-log-writers                   ; FUNCTION
+   #:rfc5424-logger                     ; CLASS
+   #:current-time                       ; GENERIC, METHOD
+   #:format-log                         ; GENERIC, METHOD
+   #:rfc-log                            ; MACRO
    )
   ;; RFC 5424 IETF-reserved structured data names
   (:export
