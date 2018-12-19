@@ -28,7 +28,7 @@
                (:file "udp-syslog")))
 
 
-(asdf:defsystem #:cl-syslog/tests
+(asdf:defsystem #:cl-syslog-tests
   :description "tests for cl-syslog library"
   :version (:read-file-form "VERSION.txt")
   :author "Mike Maul <mike.maul@gmail.com>"
