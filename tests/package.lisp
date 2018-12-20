@@ -1,6 +1,6 @@
 
 
-(defpackage :cl-syslog-tests
+(defpackage :cl-syslog/tests
   (:use :cl)
   (:import-from :cl-syslog :get-priority :get-facility 
 		invalid-priority invalid-facility) 

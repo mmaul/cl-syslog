@@ -1,5 +1,5 @@
 
-(in-package :cl-syslog-tests)
+(in-package :cl-syslog/tests)
 
 (nst:def-fixtures f-lo-logger
                   (:cleanup (cl-syslog.udp:udp-logger-close lo-logger))
