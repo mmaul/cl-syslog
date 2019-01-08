@@ -1,5 +1,5 @@
 
-(in-package :cl-syslog/tests)
+(in-package :cl-syslog.tests)
 
 (nst:def-fixtures f-lo-logger
                   (:cleanup (cl-syslog.udp:udp-logger-close lo-logger))
@@ -27,8 +27,8 @@
   (:documentation "Test Syslog logging")
 
   (nst:def-test (log-syslog)
-      (:equal "Test cl-syslog-tests:log-syslog")
-      (syslog:log "myprog" :local7 :info "Test cl-syslog-tests:log-syslog")
+      (:equal "Test cl-syslog.tests:log-syslog")
+      (syslog:log "myprog" :local7 :info "Test cl-syslog.tests:log-syslog")
     )
   )
 
@@ -51,8 +51,8 @@
 (defun passed-testsp ()
   (let ((tr (map 'list #'identity
                  (nth-value 1
-                            (cl-ppcre:scan-to-strings "Package CL-SYSLOG-TESTS: (\\d+) of (\\d+) passed"
+                            (cl-ppcre:scan-to-strings "Package CL-SYSLOG.TESTS: (\\d+) of (\\d+) passed"
                                                       (with-output-to-string (s)
-                                                        (nst-control-api:report-package 'cl-syslog-tests s)))))))
+                                                        (nst-control-api:report-package 'cl-syslog.tests s)))))))
     (if tr (apply #'string= tr) nil))
   )
