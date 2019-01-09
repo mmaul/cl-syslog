@@ -13,6 +13,10 @@ Common Lisp interface to local and remote Syslog facilities.
 The source files are relatively well documented, so we recommend
 looking at them, but here's a quickstart guide.
 
+## Notice
+* cl-syslog.udp has been removed due to duplicate functionality in cl-syslog: udp-log-writer
+* All functionality has been moved into system cl-syslog package cl-syslog (Sorry if this causes breakage)
+
 ### Basic Usage
 
 To load `cl-syslog`, use Quicklisp or ASDF as usual:
@@ -179,35 +183,4 @@ The raw C interfaces are CFFI-accessible by their standard UNIX names:
 `openlog`, `closelog`, and `syslog`. None of these are necessary
 unless you are looking for complete control. Beware, if you mess these
 calls up, you will break your Lisp process.
-
-### Remote (UDP) Syslog
-
-*Note*: This interface is subject to change.
-
-UDP messaging can be done with the `udp-log-writer` with the RFC
-logger, but a more direct interface is also supplied. These UDP
-functions are housed in the `syslog-udp` package:
-
-Set up the global UDP logger:
-
-```
-> (syslog.udp:udp-logger "127.0.0.1" 514)
-```
-
-Log a message:
-
-```
-(syslog.udp:log "MyApp" :local7 :info "this is the message")
-```
-
-Log using a transient logger along with ulog function:
-```
-(syslog-udp:ulog "this is the message" :logger 
-  (syslog-udp:udp-logger "192.168.0.5" 514 :transient t))
-```
-
-Log with a priority:
-```
-(syslog.udp:ulog "this is an error" :pri :err)
-```
 
